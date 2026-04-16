@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{.Config.CADisplay}} — {{.Config.CeremonyType.Title}}</title>
+<style>
+:root {
+  --accent: #1a3a5c;
+  --accent-light: #2563a8;
+  --border: #d1d5db;
+  --code-bg: #1e1e2e;
+  --code-fg: #cdd6f4;
+  --code-comment: #6c7086;
+  --warn-bg: #fff7ed;
+  --warn-border: #fed7aa;
+  --warn-text: #7c2d12;
+  --ok-bg: #f0fdf4;
+  --ok-border: #bbf7d0;
+  --ok-text: #166534;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px; line-height: 1.6; color: #111;
+  background: #fff; padding: 40px 56px; max-width: 960px; margin: 0 auto;
+}
+.cover { text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 32px; margin-bottom: 32px; }
+.classification {
+  display: inline-block; background: var(--warn-text); color: #fff;
+  font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  padding: 3px 14px; border-radius: 3px; margin-bottom: 20px;
+}
+.cover h1 { font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.cover h2 { font-size: 16px; font-weight: 400; color: #4b5563; margin-bottom: 20px; }
+.meta-grid { display: grid; grid-template-columns: 140px 1fr; gap: 6px 16px; text-align: left; max-width: 480px; margin: 0 auto; font-size: 13px; }
+.meta-grid .key { color: #6b7280; font-weight: 600; }
+h3 { font-size: 15px; font-weight: 700; color: var(--accent); margin: 28px 0 10px; padding-bottom: 4px; border-bottom: 1px solid #e5e7eb; page-break-after: avoid; }
+h4 { font-size: 13px; font-weight: 700; color: #374151; margin: 16px 0 6px; }
+p { font-size: 13px; color: #374151; margin-bottom: 8px; }
+ul, ol { padding-left: 20px; font-size: 13px; color: #374151; margin-bottom: 8px; }
+li { margin-bottom: 4px; }
+.checklist { list-style: none; padding-left: 0; }
+.checklist li { display: flex; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+.checklist li::before { content: "☐"; font-size: 14px; line-height: 1.4; flex-shrink: 0; color: #6b7280; }
+pre {
+  background: var(--code-bg); color: var(--code-fg);
+  font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 12px; border-radius: 6px; padding: 14px 16px; margin: 10px 0;
+  overflow-x: auto; white-space: pre; line-height: 1.7;
+  page-break-inside: avoid;
+}
+.comment { color: var(--code-comment); }
+.step {
+  background: #f7f8fa; border-left: 3px solid var(--accent-light);
+  border-radius: 0 6px 6px 0; padding: 12px 16px; margin: 10px 0;
+  page-break-inside: avoid;
+}
+.step-num { font-size: 11px; font-weight: 700; color: var(--accent-light); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.warn {
+  background: var(--warn-bg); border: 1px solid var(--warn-border);
+  border-radius: 6px; padding: 12px 14px; margin: 10px 0; font-size: 13px; color: var(--warn-text);
+}
+.warn strong { display: block; margin-bottom: 2px; }
+.ok {
+  background: var(--ok-bg); border: 1px solid var(--ok-border);
+  border-radius: 6px; padding: 10px 14px; margin: 8px 0; font-size: 13px; color: var(--ok-text);
+}
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+th { text-align: left; padding: 6px 10px; background: #f3f4f6; border: 1px solid var(--border); font-weight: 600; font-size: 12px; }
+td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
+.sig-line { border-bottom: 1px solid #374151; min-height: 28px; }
+.mono { font-family: monospace; font-size: 11px; color: #6b7280; }
+.page-break { page-break-after: always; }
+
+@media print {
+  body { padding: 15mm 20mm; }
+  pre { background: #f8f8f8 !important; color: #111 !important; border: 1px solid #ccc; }
+  .comment { color: #666 !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── COVER ── -->
+<div class="cover">
+  <div class="classification">Confidential — Restricted Distribution</div>
+  <h1>{{.Config.OrgDisplay}}</h1>
+  <h2>{{.Config.CADisplay}} · {{.Config.CeremonyType.Title}}</h2>
+  <div class="meta-grid">
+    <span class="key">Date</span>          <span>{{.Config.Date}}</span>
+    <span class="key">Location</span>      <span>{{.Config.LocationDisplay}}</span>
+    <span class="key">Operator</span>      <span>{{.Config.OperatorDisplay}}</span>
+    <span class="key">Custodians</span>    <span>{{.Config.Shamir.Shares}} (threshold: any {{.Config.Shamir.Threshold}})</span>
+    <span class="key">Document Ver.</span> <span>1.0 — Generated {{.GeneratedAt}} UTC</span>
+    <span class="key">Standards</span>     <span>EN 319 401 §7.5/7.6 · TS 119 431-1 V1.3.1</span>
+  </div>
+</div>
+
+<!-- ── 1. PURPOSE ── -->
+<h3>1 · Purpose and Scope</h3>
+<p>{{.CeremonyDescription}}</p>
+<p>This ceremony is performed in accordance with <strong>ETSI EN 319 401 V3.2.1 §7.5</strong> (Cryptographic Controls) and <strong>§7.6</strong> (Physical and Environmental Security). The Shamir Secret Sharing implementation is <strong>ssss</strong> (B. Poettering). Share encryption uses <strong>age</strong> with <strong>age-plugin-yubikey</strong> (str4d).</p>
+<div class="warn">
+  <strong>⚠ This is a security-sensitive ceremony.</strong>
+  All commands shall be executed only by the designated Operator in the presence of all custodians and witnesses.
+  No part of this ceremony shall be performed outside the designated secure room.
+  All mobile phones and networked devices must be removed before the ceremony begins.
+</div>
+
+<!-- ── 2. PERSONNEL ── -->
+<h3>2 · Personnel</h3>
+<table>
+  <thead><tr><th>Role</th><th>Name</th><th>Signature</th></tr></thead>
+  <tbody>
+    <tr><td>Ceremony Operator</td><td>{{.Config.OperatorDisplay}}</td><td class="sig-line"></td></tr>
+    {{range $i, $c := .Config.Custodians}}<tr><td>Custodian {{add $i 1}}</td><td>{{$.Config.CustodianName $i}}</td><td class="sig-line"></td></tr>
+    {{end}}{{range $i, $w := .Config.Witnesses}}<tr><td>Witness {{add $i 1}}</td><td>{{$.Config.WitnessName $i}}</td><td class="sig-line"></td></tr>
+    {{end}}
+  </tbody>
+</table>
+
+<!-- ── 3. PRE-CEREMONY CHECKLIST ── -->
+<h3>3 · Pre-Ceremony Checklist</h3>
+
+<h4>3.1 Personnel Verification</h4>
+<ul class="checklist">
+  <li>All {{.Config.Shamir.Shares}} custodians physically present — identity verified with government-issued photo ID</li>
+  <li>All {{len .Config.Witnesses}} witnesses physically present</li>
+  <li>Ceremony operator present</li>
+  <li>No additional personnel in the room</li>
+  <li>All mobile phones and wireless devices removed from the room</li>
+</ul>
+
+<h4>3.2 Equipment</h4>
+<ul class="checklist">
+  <li>Air-gapped laptop — no WiFi hardware, or disabled at BIOS level; no network cable connected</li>
+  <li>Booted from verified read-only media (Tails OS recommended) or freshly installed offline OS</li>
+  <li>{{.Config.Shamir.Shares}} × YubiKey 5 Series (one per custodian) — factory-reset or known-good state</li>
+  {{if .IncludeUSBDrives}}<li>{{.Config.Shamir.Shares}} × dedicated USB drives (labelled Custodian 1–{{.Config.Shamir.Shares}}, never previously used)</li>{{end}}
+  <li>Video camera for ceremony recording — mandatory audit trail per EN 319 401 §7.6-13</li>
+  {{if .Config.Options.IncludeYubiHSMImport}}<li>2 × YubiHSM 2 FIPS (serial numbers recorded below) for CA key storage</li>{{end}}
+  <li>Printed copy of this ceremony script (this document)</li>
+  <li>Printed log sheets for recording ceremony artifacts</li>
+  <li>Permanent markers for labelling USB drives and tamper-evident bags</li>
+</ul>
+
+<h4>3.3 Software (verify hashes before ceremony)</h4>
+{{codeblock .VerifySoftwareCmd}}
+<ul class="checklist">
+  <li>ssss installed — <code>apt install ssss</code> / <code>brew install ssss</code></li>
+  <li>age installed — <code>apt install age</code> / <code>brew install age</code></li>
+  <li>age-plugin-yubikey installed — binary from <code>github.com/str4d/age-plugin-yubikey/releases</code></li>
+  <li>ykman installed — <code>apt install yubikey-manager</code></li>
+  {{if .Config.Options.IncludeYubiHSMImport}}<li>yubihsm-shell installed — from Yubico packages</li>{{end}}
+  <li>All version strings recorded in ceremony log</li>
+</ul>
+
+<h4>3.4 Video Recording</h4>
+<ul class="checklist">
+  <li>Camera positioned to show keyboard, screen, and all personnel — but NOT showing secret material on screen</li>
+  <li>Recording started — announce on camera: organisation, CA name, ceremony type, date, time, location, and all personnel present by name and role</li>
+</ul>
+
+<!-- ── 4. ENVIRONMENT SETUP ── -->
+<h3>4 · Environment Setup</h3>
+
+<div class="step">
+  <div class="step-num">Step 1</div>
+  <strong>Verify Air-Gap</strong>
+  <p>The operator confirms on camera that the workstation has no network connectivity.</p>
+  {{codeblock .AirGapCmd}}
+  <ul class="checklist">
+    <li>All network interfaces confirmed DOWN or absent</li>
+    <li>Wireless hardware disabled and confirmed by physical inspection</li>
+  </ul>
+</div>
+
+<div class="step">
+  <div class="step-num">Step 2</div>
+  <strong>Prepare Working Directory</strong>
+  {{codeblock .PrepWorkdirCmd}}
+  <ul class="checklist">
+    <li>Working directory confirmed on tmpfs (RAM only — no disk writes)</li>
+  </ul>
+</div>
+
+{{if .Config.Options.IncludeYubiHSMImport}}
+<div class="step">
+  <div class="step-num">Step 3</div>
+  <strong>Verify YubiHSM Devices</strong>
+  {{codeblock .VerifyYubiHSMCmd}}
+  <ul class="checklist">
+    <li>YubiHSM 2 FIPS device #1 detected — Serial No.: __________</li>
+    <li>YubiHSM 2 FIPS device #2 detected — Serial No.: __________</li>
+    <li>Both devices confirmed FIPS 140-2 Level 3 (Cert #3916)</li>
+  </ul>
+</div>
+{{end}}
+
+<!-- ── 5. YUBIKEY ENROLLMENT ── -->
+<h3>5 · Custodian YubiKey Enrollment</h3>
+<p>Each custodian's YubiKey is enrolled with a PIV key used as the age recipient for their SSS share. Complete this for all {{.Config.Shamir.Shares}} custodians before generating the secret.</p>
+<div class="warn">
+  <strong>⚠ One YubiKey at a time.</strong>
+  Only one YubiKey should be inserted during each enrollment step.
+  After enrollment, remove the YubiKey and return it to the custodian immediately.
+</div>
+
+{{range $i, $_ := .Config.Custodians}}
+<h4>Custodian {{add $i 1}}: {{$.Config.CustodianName $i}}</h4>
+<p>Insert {{$.Config.CustodianName $i}}'s YubiKey into the workstation's USB port.</p>
+{{codeblock (index $.EnrollCmds $i)}}
+<div class="ok">☑ Record in ceremony log — Custodian {{add $i 1}} · YubiKey Serial No.: __________ · age recipient: <code>age1yubikey1___________</code></div>
+<p>Remove {{$.Config.CustodianName $i}}'s YubiKey before proceeding to the next custodian.</p>
+{{end}}
+
+<div class="ok">☑ Verification: All {{.Config.Shamir.Shares}} custodian age recipient strings recorded in ceremony log before proceeding.</div>
+
+<!-- ── 6. SECRET GENERATION ── -->
+{{if not .IsRecovery}}
+<h3>6 · Secret Generation</h3>
+
+{{if .IsHSMKeygen}}
+<p>The Root CA private key is generated directly inside the YubiHSM 2 FIPS device. The wrap key is generated separately to enable encrypted key backup.</p>
+<div class="step">
+  <div class="step-num">Step 6a</div>
+  <strong>Generate Root CA Key Inside YubiHSM</strong>
+  {{codeblock .GenerateHSMKeyCmd}}
+</div>
+<div class="step">
+  <div class="step-num">Step 6b</div>
+  <strong>Generate Wrap Key for Backup</strong>
+  {{codeblock .GenerateKeyCmd}}
+</div>
+{{else}}
+<p>A 256-bit random wrap key is generated using the OS CSPRNG (<code>/dev/urandom</code>). This key enables decryption of exported CA key backups and will be split using Shamir Secret Sharing.</p>
+<div class="step">
+  <div class="step-num">Step 6</div>
+  <strong>Generate Wrap Key</strong>
+  {{codeblock .GenerateKeyCmd}}
+  <ul class="checklist">
+    <li>Key length confirmed: 64 hex characters (256 bits)</li>
+    <li>Key value read aloud — first 8 and last 8 chars confirmed by all witnesses</li>
+    <li>Screen visible to all custodians and witnesses during this step</li>
+  </ul>
+  <div class="warn">
+    <strong>⚠ Proceed immediately to Section 7.</strong>
+    Do not leave the terminal unattended. The wrap key must not be written to disk or transmitted. It exists only in RAM.
+  </div>
+</div>
+{{end}}
+
+<!-- ── 7. SSS SPLIT ── -->
+<h3>7 · Shamir Secret Sharing — Split ({{.Config.Shamir.Threshold}}-of-{{.Config.Shamir.Shares}})</h3>
+<div class="warn">
+  <strong>⚠ All {{.Config.Shamir.Shares}} custodians must watch the screen during this step.</strong>
+  The split output shows plaintext share values momentarily before encryption.
+  This is the most sensitive moment of the ceremony.
+</div>
+
+<div class="step">
+  <div class="step-num">Step 7</div>
+  <strong>Split Secret into {{.Config.Shamir.Shares}} Shares</strong>
+  {{codeblock .SSSSplitCmd}}
+  <p>Capture the split output. Assign each numbered share to its custodian. Record share numbers (NOT values) in the ceremony log.</p>
+  <table>
+    <thead><tr><th>Share #</th><th>Assigned Custodian</th><th>Value (record temporarily — wipe after encryption)</th></tr></thead>
+    <tbody>
+      {{range $i, $_ := .Config.Custodians}}<tr>
+        <td>{{add $i 1}}</td>
+        <td>{{$.Config.CustodianName $i}}</td>
+        <td style="background:#fff3cd;font-family:monospace;font-size:11px">[Share {{add $i 1}} value — paste from ssss output]</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+
+<!-- ── 8. SHARE ENCRYPTION ── -->
+<h3>8 · Share Encryption</h3>
+<p>Each share is encrypted to its custodian's YubiKey using <code>age</code>. The custodian's physical YubiKey and PIN are required at reconstruction time; the encrypted file alone is useless without the device.</p>
+
+{{range $i, $_ := .Config.Custodians}}
+<h4>Encrypt Share {{add $i 1}} → {{$.Config.CustodianName $i}}</h4>
+{{codeblock (index $.EncryptCmds $i)}}
+{{if $.IncludeUSBDrives}}<p>Insert Custodian {{add $i 1}}'s dedicated USB drive. Copy <code>custodian{{add $i 1}}.share.age</code> to the drive. Eject the USB drive and hand it to {{$.Config.CustodianName $i}} in a tamper-evident bag.</p>{{end}}
+{{end}}
+
+<div class="ok">☑ All {{.Config.Shamir.Shares}} custodian share files encrypted and distributed.</div>
+
+{{end}}{{/* end if not IsRecovery */}}
+
+{{if .IsRecovery}}
+<!-- ── RECOVERY PATH ── -->
+<h3>6 · Share Decryption and Reconstruction</h3>
+<p>At least {{.Config.Shamir.Threshold}} custodians must present their YubiKey to decrypt their share. The Operator collects the decrypted values and combines them.</p>
+
+{{range $i := .RecoveryCustodians}}
+<h4>Custodian {{add $i 1}}: {{$.Config.CustodianName $i}} — Decrypt Share</h4>
+<p>Insert {{$.Config.CustodianName $i}}'s YubiKey. Enter PIV PIN when prompted.</p>
+{{codeblock (index $.RecoveryDecryptCmds $i)}}
+<p>Remove {{$.Config.CustodianName $i}}'s YubiKey after decryption.</p>
+{{end}}
+
+<div class="step">
+  <div class="step-num">Step 7</div>
+  <strong>Reconstruct Secret</strong>
+  {{codeblock .RecoveryCombineCmd}}
+</div>
+{{end}}
+
+<!-- ── 9. VERIFICATION ── -->
+{{if and .Config.Options.IncludeVerification (not .IsRecovery)}}
+<h3>9 · Verification</h3>
+<div class="warn"><strong>⚠ All custodians must remain in the room during verification.</strong></div>
+<p>Before destroying plaintext material, verify that {{.Config.Shamir.Threshold}} shares reconstruct the original secret.</p>
+
+<div class="step">
+  <div class="step-num">Step 9a</div>
+  <strong>Test Reconstruction with {{.Config.Shamir.Threshold}} Shares</strong>
+  {{codeblock .VerifyReconstructCmd}}
+  <ul class="checklist">
+    <li>Reconstructed secret matches original wrap key — first 16 and last 16 hex chars confirmed by all witnesses</li>
+    <li>Test share files wiped immediately: <code>shred -u share*.txt</code></li>
+  </ul>
+</div>
+
+{{if .Config.Options.IncludeYubiHSMImport}}
+<div class="step">
+  <div class="step-num">Step 9b</div>
+  <strong>Import Wrap Key into YubiHSM (both devices)</strong>
+  {{codeblock .ImportWrapKeyCmd}}
+  <ul class="checklist">
+    <li>Wrap key object (ID 0x0100) confirmed on YubiHSM #1 (SN: __________)</li>
+    <li>Wrap key object (ID 0x0100) confirmed on YubiHSM #2 (SN: __________)</li>
+  </ul>
+</div>
+{{end}}
+{{end}}
+
+<!-- ── 10. SECURE CLEANUP ── -->
+<h3>{{.CleanupSectionNum}} · Secure Cleanup</h3>
+<div class="warn"><strong>⚠ This step is mandatory and must not be skipped.</strong> All plaintext key material must be destroyed before leaving the secure room.</div>
+
+<div class="step">
+  <div class="step-num">Step {{.CleanupSectionNum}}</div>
+  <strong>Wipe All Plaintext Material</strong>
+  {{codeblock .CleanupCmd}}
+  <ul class="checklist">
+    <li>All files in /tmp/ceremony securely wiped (shred confirmed)</li>
+    <li>Shell history cleared</li>
+    <li>WRAP_KEY and all C<em>N</em>_RECIPIENT variables unset</li>
+    <li>Terminal window closed</li>
+    <li>Workstation powered off (not suspended or hibernated)</li>
+    <li>Video recording stopped — confirm saved to ceremony archive</li>
+  </ul>
+</div>
+
+<!-- ── 11. CEREMONY RECORD ── -->
+<h3>{{.RecordSectionNum}} · Ceremony Record</h3>
+<p>Record the following in the formal ceremony log. Retain for a minimum of <strong>7 years</strong> after the associated CA certificate ceases to be valid (TS 119 431-1 §6.4.6).</p>
+<table>
+  <thead><tr><th>Item</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Organisation</td><td>{{.Config.OrgDisplay}}</td></tr>
+    <tr><td>CA Name</td><td>{{.Config.CADisplay}}</td></tr>
+    <tr><td>Ceremony Type</td><td>{{.Config.CeremonyType.Title}}</td></tr>
+    <tr><td>Date and Time</td><td>{{.Config.Date}} ____:____ UTC</td></tr>
+    <tr><td>Location</td><td>{{.Config.LocationDisplay}}</td></tr>
+    <tr><td>Operator</td><td>{{.Config.OperatorDisplay}}</td></tr>
+    <tr><td>SSS Parameters</td><td>{{.Config.Shamir.Threshold}}-of-{{.Config.Shamir.Shares}}</td></tr>
+    <tr><td>Share Storage</td><td>{{.StorageNote}}</td></tr>
+    {{if .Config.Options.IncludeYubiHSMImport}}
+    <tr><td>YubiHSM #1 Serial</td><td>__________</td></tr>
+    <tr><td>YubiHSM #2 Serial</td><td>__________</td></tr>
+    {{end}}
+    <tr><td>Video Recording Reference</td><td>__________</td></tr>
+  </tbody>
+</table>
+
+<h4>Custodian Share Assignment</h4>
+<table>
+  <thead><tr><th>#</th><th>Custodian</th><th>YubiKey Serial</th><th>age Recipient (first 24 chars)</th><th>Share File</th></tr></thead>
+  <tbody>
+    {{range $i, $_ := .Config.Custodians}}<tr>
+      <td>{{add $i 1}}</td>
+      <td>{{$.Config.CustodianName $i}}</td>
+      <td>__________</td>
+      <td class="mono">age1yubikey1____________…</td>
+      <td class="mono">custodian{{add $i 1}}.share.age</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+
+<!-- ── SIGNATURE PAGE ── -->
+<div class="page-break"></div>
+<h3>{{.SigSectionNum}} · Signature Page</h3>
+<p>By signing below, each party confirms that they were present throughout the ceremony, that it was conducted in accordance with this procedure, and that the ceremony log accurately reflects what occurred.</p>
+
+<h4>Ceremony Operator</h4>
+<table>
+  <thead><tr><th>Name</th><th>Signature</th><th>Date</th></tr></thead>
+  <tbody><tr><td>{{.Config.OperatorDisplay}}</td><td class="sig-line"></td><td class="sig-line"></td></tr></tbody>
+</table>
+
+<h4>Custodians</h4>
+<table>
+  <thead><tr><th>#</th><th>Name</th><th>YubiKey Serial</th><th>Signature</th><th>Share Received ☑</th></tr></thead>
+  <tbody>
+    {{range $i, $_ := .Config.Custodians}}<tr>
+      <td>{{add $i 1}}</td>
+      <td>{{$.Config.CustodianName $i}}</td>
+      <td>__________</td>
+      <td class="sig-line"></td>
+      <td>☐</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+
+<h4>Witnesses</h4>
+<table>
+  <thead><tr><th>Name</th><th>Signature</th><th>Date</th></tr></thead>
+  <tbody>
+    {{range $i, $_ := .Config.Witnesses}}<tr>
+      <td>{{$.Config.WitnessName $i}}</td>
+      <td class="sig-line"></td>
+      <td class="sig-line"></td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+
+<p style="margin-top:40px;font-size:11px;color:#9ca3af">
+  Generated by go-root-ceremony · github.com/sirosfoundation/go-root-ceremony ·
+  Standards: ETSI EN 319 401 V3.2.1, ETSI TS 119 431-1 V1.3.1 ·
+  Generated: {{.GeneratedAt}} UTC
+</p>
+
+</body>
+</html>
