@@ -6,6 +6,7 @@
 *.dylib
 bin/
 *.html
+go-root-ceremony
 
 # Example binaries
 examples/basic/basic
