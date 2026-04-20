@@ -98,8 +98,9 @@ func CmdGenerateWrapKey() []string {
 		`echo "Key length (chars): $(echo -n "${WRAP_KEY}" | wc -c)"`,
 		"# Expected: 64",
 		"",
-		"# Display key — screen must be visible to all custodians and witnesses",
-		`echo "WRAP KEY: ${WRAP_KEY}"`,
+		"# Show only first 4 and last 4 hex chars for witness confirmation",
+		"# The full key is NEVER displayed on screen (camera is recording)",
+		`echo "WRAP KEY fingerprint: ${WRAP_KEY:0:4}....${WRAP_KEY: -4}"`,
 	}
 }
 
@@ -144,7 +145,7 @@ func CmdGenerateYubiHSMWrapKey(caName string) []string {
 		"# To split the wrap key via SSS, we need its value in RAM.",
 		"# Generate an equivalent key externally for the ceremony:",
 		`WRAP_KEY=$(dd if=/dev/urandom bs=32 count=1 2>/dev/null | xxd -p | tr -d '\n')`,
-		`echo "WRAP KEY: ${WRAP_KEY}"`,
+		`echo "WRAP KEY fingerprint: ${WRAP_KEY:0:4}....${WRAP_KEY: -4}"`,
 		"# This key will be imported into the YubiHSM in Section 9.",
 	}
 }
@@ -157,10 +158,16 @@ func CmdSSSplit(n, m int) []string {
 		fmt.Sprintf("# -n %d  = total shares generated", n),
 		"# -x   = hex input/output mode (required for binary secrets)",
 		"# -s 256 = prime field size in bits (must be >= secret bit length)",
-		fmt.Sprintf(`echo -n "${WRAP_KEY}" | ssss-split -t %d -n %d -x -s 256`, m, n),
+		"# Output is written directly to individual share files (never shown on screen)",
+		fmt.Sprintf(`echo -n "${WRAP_KEY}" | ssss-split -t %d -n %d -x -s 256 | while IFS= read -r line; do`, m, n),
+		`  NUM=$(echo "$line" | cut -d- -f1)`,
+		`  echo "$line" > "share-${NUM}.txt"`,
+		`  echo "Share ${NUM} written to share-${NUM}.txt"`,
+		"done",
 		"",
-		fmt.Sprintf("# Output: %d lines of the form  N-<hex value>", n),
-		"# Assign each line to its custodian as shown in the share table below.",
+		fmt.Sprintf("# Confirm all %d share files exist", n),
+		fmt.Sprintf(`ls -1 share-*.txt | wc -l`),
+		fmt.Sprintf("# Expected: %d", n),
 	}
 }
 
@@ -172,8 +179,8 @@ func CmdEncryptShare(i int, storageMethod StorageMethod) []string {
 		"",
 		fmt.Sprintf("# Encrypt share — only Custodian %d's YubiKey can decrypt this", i+1),
 		fmt.Sprintf(
-			`echo -n "%d-[paste share %d value]" | age -r "${C%d_RECIPIENT}" -o custodian%d.share.age`,
-			i+1, i+1, i+1, i+1),
+			`cat "share-%d.txt" | age -r "${C%d_RECIPIENT}" -o custodian%d.share.age`,
+			i+1, i+1, i+1),
 		"",
 		fmt.Sprintf("ls -lh custodian%d.share.age", i+1),
 	}
@@ -213,11 +220,17 @@ func CmdVerifyReconstruct(m int) []string {
 	lines = append(lines,
 		"",
 		fmt.Sprintf("# Combine the %d decrypted shares", m),
-		fmt.Sprintf("cat %s | ssss-combine -t %d -x", shareFiles, m),
+		fmt.Sprintf("cat %s | ssss-combine -t %d -x > reconstructed.txt", shareFiles, m),
 		"",
-		`echo "Original:      ${WRAP_KEY}"`,
-		`echo "Reconstructed: [paste ssss-combine output]"`,
-		"# Both values must match exactly",
+		"# Automated comparison — secrets are NOT displayed on screen",
+		`if [ "$(cat reconstructed.txt)" = "${WRAP_KEY}" ]; then`,
+		`  echo "VERIFICATION PASSED — reconstructed key matches original"`,
+		"else",
+		`  echo "VERIFICATION FAILED — keys do not match"`,
+		"fi",
+		"",
+		"# Wipe reconstruction artifact",
+		"shred -u reconstructed.txt",
 	)
 	return lines
 }

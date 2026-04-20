@@ -72,10 +72,18 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
 .mono { font-family: monospace; font-size: 11px; color: #6b7280; }
 .page-break { page-break-after: always; }
 
+.notes { margin: 14px 0; page-break-inside: avoid; }
+.notes strong { font-size: 12px; color: #6b7280; display: block; margin-bottom: 4px; }
+.notes-area {
+  border: 1px solid var(--border); border-radius: 4px; min-height: 80px;
+  background: #fafafa;
+}
+
 @media print {
   body { padding: 15mm 20mm; }
   pre { background: #f8f8f8 !important; color: #111 !important; border: 1px solid #ccc; }
   .comment { color: #666 !important; }
+  .notes-area { min-height: 100px; background: #fff !important; border: 1px solid #999; }
 }
 </style>
 </head>
@@ -157,7 +165,7 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
 
 <h4>3.4 Video Recording</h4>
 <ul class="checklist">
-  <li>Camera positioned to show keyboard, screen, and all personnel — but NOT showing secret material on screen</li>
+  <li>Camera positioned to show the screen and all personnel — the ceremony is designed so that secret material is never displayed on screen</li>
   <li>Recording started — announce on camera: organisation, CA name, ceremony type, date, time, location, and all personnel present by name and role</li>
 </ul>
 
@@ -240,9 +248,12 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
   {{codeblock .GenerateKeyCmd}}
   <ul class="checklist">
     <li>Key length confirmed: 64 hex characters (256 bits)</li>
-    <li>Key value read aloud — first 8 and last 8 chars confirmed by all witnesses</li>
-    <li>Screen visible to all custodians and witnesses during this step</li>
+    <li>First 4 and last 4 hex chars confirmed by all witnesses (full key is never shown on screen)</li>
   </ul>
+  <div class="notes">
+    <strong>Notes</strong>
+    <div class="notes-area"></div>
+  </div>
   <div class="warn">
     <strong>⚠ Proceed immediately to Section 7.</strong>
     Do not leave the terminal unattended. The wrap key must not be written to disk or transmitted. It exists only in RAM.
@@ -253,8 +264,8 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
 <!-- ── 7. SSS SPLIT ── -->
 <h3>7 · Shamir Secret Sharing — Split ({{.Config.Shamir.Threshold}}-of-{{.Config.Shamir.Shares}})</h3>
 <div class="warn">
-  <strong>⚠ All {{.Config.Shamir.Shares}} custodians must watch the screen during this step.</strong>
-  The split output shows plaintext share values momentarily before encryption.
+  <strong>⚠ All {{.Config.Shamir.Shares}} custodians must be present during this step.</strong>
+  Share values are written directly to individual files and are never displayed on screen.
   This is the most sensitive moment of the ceremony.
 </div>
 
@@ -262,18 +273,22 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
   <div class="step-num">Step 7</div>
   <strong>Split Secret into {{.Config.Shamir.Shares}} Shares</strong>
   {{codeblock .SSSSplitCmd}}
-  <p>Capture the split output. Assign each numbered share to its custodian. Record share numbers (NOT values) in the ceremony log.</p>
+  <p>Shares are written directly to individual files. Record share numbers (NOT values) in the ceremony log.</p>
   <table>
-    <thead><tr><th>Share #</th><th>Assigned Custodian</th><th>Value (record temporarily — wipe after encryption)</th></tr></thead>
+    <thead><tr><th>Share #</th><th>Assigned Custodian</th><th>Confirmed Written ☑</th></tr></thead>
     <tbody>
       {{range $i, $_ := .Config.Custodians}}<tr>
         <td>{{add $i 1}}</td>
         <td>{{$.Config.CustodianName $i}}</td>
-        <td style="background:#fff3cd;font-family:monospace;font-size:11px">[Share {{add $i 1}} value — paste from ssss output]</td>
+        <td>☐</td>
       </tr>
       {{end}}
     </tbody>
   </table>
+  <div class="notes">
+    <strong>Notes</strong>
+    <div class="notes-area"></div>
+  </div>
 </div>
 
 <!-- ── 8. SHARE ENCRYPTION ── -->
@@ -320,9 +335,13 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
   <strong>Test Reconstruction with {{.Config.Shamir.Threshold}} Shares</strong>
   {{codeblock .VerifyReconstructCmd}}
   <ul class="checklist">
-    <li>Reconstructed secret matches original wrap key — first 16 and last 16 hex chars confirmed by all witnesses</li>
+    <li>Reconstructed secret matches original wrap key — confirmed by automated comparison (no secrets shown on screen)</li>
     <li>Test share files wiped immediately: <code>shred -u share*.txt</code></li>
   </ul>
+  <div class="notes">
+    <strong>Notes</strong>
+    <div class="notes-area"></div>
+  </div>
 </div>
 
 {{if .Config.Options.IncludeYubiHSMImport}}
@@ -354,6 +373,10 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
     <li>Workstation powered off (not suspended or hibernated)</li>
     <li>Video recording stopped — confirm saved to ceremony archive</li>
   </ul>
+  <div class="notes">
+    <strong>Notes</strong>
+    <div class="notes-area"></div>
+  </div>
 </div>
 
 <!-- ── 11. CEREMONY RECORD ── -->
