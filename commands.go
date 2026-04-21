@@ -32,7 +32,7 @@ func CmdPrepareWorkdir() []string {
 }
 
 // CmdVerifySoftware returns commands to confirm all required tools are installed.
-func CmdVerifySoftware(includeYubiHSM bool) []string {
+func CmdVerifySoftware(hsmType HSMType) []string {
 	lines := []string{
 		"# Verify installed tools",
 		"which ssss-split ssss-combine age age-plugin-yubikey ykman",
@@ -43,8 +43,11 @@ func CmdVerifySoftware(includeYubiHSM bool) []string {
 		"age-plugin-yubikey --version",
 		"ykman --version",
 	}
-	if includeYubiHSM {
+	switch hsmType {
+	case HSMYubiHSM:
 		lines = append(lines, "yubihsm-shell --version")
+	case HSMPKCS11:
+		lines = append(lines, "softhsm2-util --version", "pkcs11-tool --version")
 	}
 	return lines
 }
