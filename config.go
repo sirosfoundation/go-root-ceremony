@@ -66,17 +66,21 @@ const (
 	StorageBoth  StorageMethod = "both"
 )
 
-func (s StorageMethod) Note() string {
+func (s StorageMethod) Note(drivesPerShare int) string {
+	if drivesPerShare < 1 {
+		drivesPerShare = 2
+	}
 	switch s {
 	case StoragePrint:
 		return "Each encrypted share file is base64-encoded and printed as a QR code. " +
 			"Custodians receive a printed sheet for off-site storage."
 	case StorageBoth:
-		return "Each encrypted share file is both written to a USB drive and printed as a " +
-			"QR code. Custodians must store them separately."
+		return fmt.Sprintf("Each encrypted share file is written to %d USB drives and printed as a "+
+			"QR code. Copies must be stored in separate physical locations.", drivesPerShare)
 	default:
-		return "Each encrypted share file (custodianN.share.age) is written to a dedicated " +
-			"USB drive and given to the respective custodian for secure off-site storage."
+		return fmt.Sprintf("Each encrypted share file (custodianN.share.age) is written to %d "+
+			"dedicated USB drives per custodian for redundancy. Copies must be stored in "+
+			"separate physical locations.", drivesPerShare)
 	}
 }
 
@@ -113,9 +117,10 @@ func (s ShamirConfig) Validate() error {
 
 // Options holds optional ceremony steps.
 type Options struct {
-	IncludeVerification bool          `yaml:"include_verification"`
-	IncludeYubiHSMImport bool         `yaml:"include_yubihsm_import"`
-	ShareStorage        StorageMethod `yaml:"share_storage"`
+	IncludeVerification  bool          `yaml:"include_verification"`
+	IncludeYubiHSMImport bool          `yaml:"include_yubihsm_import"`
+	ShareStorage         StorageMethod `yaml:"share_storage"`
+	USBDrivesPerShare    int           `yaml:"usb_drives_per_share"`
 }
 
 // Config is the top-level ceremony configuration.
@@ -151,6 +156,7 @@ func DefaultConfig() Config {
 			IncludeVerification:  true,
 			IncludeYubiHSMImport: true,
 			ShareStorage:         StorageUSB,
+			USBDrivesPerShare:    2,
 		},
 	}
 }
@@ -172,6 +178,9 @@ func LoadConfig(path string) (Config, error) {
 func (c *Config) Validate() error {
 	if err := c.Shamir.Validate(); err != nil {
 		return err
+	}
+	if c.Options.USBDrivesPerShare < 1 {
+		c.Options.USBDrivesPerShare = 2
 	}
 	if len(c.Custodians) != c.Shamir.Shares {
 		// Pad or trim to match shares

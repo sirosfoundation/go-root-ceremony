@@ -34,10 +34,11 @@ type templateData struct {
 	RecoveryCombineCmd []string
 
 	// Derived flags
-	IsRecovery   bool
-	IsHSMKeygen  bool
+	IsRecovery       bool
+	IsHSMKeygen      bool
 	IncludeUSBDrives bool
-	StorageNote  string
+	USBDrivesPerShare int
+	StorageNote      string
 
 	// Recovery ceremony: indices of custodians who decrypt
 	RecoveryCustodians []int
@@ -133,7 +134,8 @@ func Generate(cfg *Config) (string, error) {
 		IsRecovery:           isRecovery,
 		IsHSMKeygen:          isKeygen,
 		IncludeUSBDrives:     includeUSB,
-		StorageNote:          cfg.Options.ShareStorage.Note(),
+		USBDrivesPerShare:    cfg.Options.USBDrivesPerShare,
+		StorageNote:          cfg.Options.ShareStorage.Note(cfg.Options.USBDrivesPerShare),
 		RecoveryCustodians:   recoveryCustodians,
 		CleanupSectionNum:    cleanupNum,
 		RecordSectionNum:     recordNum,
@@ -142,7 +144,15 @@ func Generate(cfg *Config) (string, error) {
 
 	funcMap := template.FuncMap{
 		"add": func(a, b int) int { return a + b },
+		"mul": func(a, b int) int { return a * b },
 		"not": func(b bool) bool { return !b },
+		"seq": func(n int) []int {
+			s := make([]int, n)
+			for i := range s {
+				s[i] = i + 1
+			}
+			return s
+		},
 		"codeblock": func(lines []string) template.HTML {
 			return renderCodeBlock(lines)
 		},

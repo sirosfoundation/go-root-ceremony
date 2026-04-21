@@ -192,6 +192,7 @@ func promptConfig() (Config, error) {
 	fmt.Println("\nOptions:")
 	cfg.Options.IncludeVerification = promptBool(r, "Include live verification step", true)
 	cfg.Options.IncludeYubiHSMImport = promptBool(r, "Include YubiHSM wrap-key import", true)
+	cfg.Options.USBDrivesPerShare = promptN(r, "USB drives per share (for redundancy)", 2, 1, 5)
 
 	fmt.Println("Share storage method:")
 	fmt.Println("  1) usb   — age-encrypted files on USB drives")
