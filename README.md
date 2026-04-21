@@ -23,10 +23,12 @@ Root CA key ceremony script generator. Produces self-contained, printable HTML c
 
 ### Security Features
 
-- **Hardware Security Modules** — YubiHSM 2 FIPS for key storage
+- **Pluggable HSM backends** — YubiHSM 2 FIPS, PKCS#11 (SoftHSM, Thales Luna, Utimaco), or no HSM
 - **Hardware tokens** — YubiKey PIV enrollment for individual custodians
 - **Shamir Secret Sharing** — Key material split across 3–10 custodians with configurable threshold
 - **Age encryption** — Encrypted share storage using `age` and `age-plugin-yubikey`
+- **Redundant USB storage** — Configurable copies per share (default 2) for geographic distribution
+- **Screen-safe ceremony** — Secret material is never displayed on screen (camera-safe)
 - **Air-gap verification** — Network-down checks before any key material is handled
 - **Secure workdir** — tmpfs-backed workspace to prevent key material hitting disk
 - **Dual storage** — USB drives, printed QR codes, or both
@@ -83,8 +85,21 @@ witnesses:
   - name: "Grace"
 options:
   include_verification: true
-  include_yubihsm_import: true
-  share_storage: "both"
+  hsm_type: "yubihsm"          # yubihsm | pkcs11 | none
+  share_storage: "both"        # usb | print | both
+  usb_drives_per_share: 2      # copies per custodian (1-5)
+```
+
+#### PKCS#11 / SoftHSM example
+
+```yaml
+options:
+  hsm_type: "pkcs11"
+  share_storage: "usb"
+  usb_drives_per_share: 2
+pkcs11:
+  module_path: "/usr/lib/softhsm/libsofthsm2.so"
+  token_label: "RootCA"
 ```
 
 ### Generate the ceremony script
@@ -103,12 +118,23 @@ go-root-ceremony generate -interactive -output ceremony.html
 
 The generated ceremony scripts expect the following tools on the air-gapped ceremony machine:
 
-- `yubihsm-shell` — YubiHSM 2 management
+### Core tools (all HSM types)
+
 - `age` / `age-keygen` — Encryption
 - `age-plugin-yubikey` — YubiKey-backed age identities
 - `ssss-split` / `ssss-combine` — Shamir Secret Sharing
 - `ykman` — YubiKey management
 - `qrencode` — QR code generation (if using printed shares)
+
+### YubiHSM backend (`hsm_type: yubihsm`)
+
+- `yubihsm-shell` — YubiHSM 2 management (from Yubico packages)
+
+### PKCS#11 backend (`hsm_type: pkcs11`)
+
+- `softhsm2-util` — SoftHSM 2 token management (for testing; `apt install softhsm2`)
+- `pkcs11-tool` — PKCS#11 operations (from OpenSC; `apt install opensc`)
+- `openssl` — Public key format conversion
 
 ## Development
 

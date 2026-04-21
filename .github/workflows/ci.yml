@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.23']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -v -race ./...
+
+      - name: Generate test (YubiHSM)
+        run: |
+          go run . init -output /tmp/test.yaml
+          go run . generate -config /tmp/test.yaml -output /tmp/test.html
+
+      - name: Generate test (PKCS#11)
+        run: |
+          sed -i 's/hsm_type: yubihsm/hsm_type: pkcs11/' /tmp/test.yaml
+          echo -e '\npkcs11:\n  module_path: /usr/lib/softhsm/libsofthsm2.so\n  token_label: TestCA' >> /tmp/test.yaml
+          go run . generate -config /tmp/test.yaml -output /tmp/test-pkcs11.html
+
+      - name: Generate test (no HSM)
+        run: |
+          sed -i 's/hsm_type: pkcs11/hsm_type: none/' /tmp/test.yaml
+          go run . generate -config /tmp/test.yaml -output /tmp/test-none.html
