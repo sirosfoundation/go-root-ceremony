@@ -18,27 +18,32 @@ type templateData struct {
 	GeneratedAt string
 
 	// Pre-built command blocks
-	AirGapCmd          []string
-	PrepWorkdirCmd     []string
-	VerifySoftwareCmd  []string
-	VerifyYubiHSMCmd   []string
-	EnrollCmds         [][]string
-	GenerateKeyCmd     []string
-	GenerateHSMKeyCmd  []string
-	SSSSplitCmd        []string
-	EncryptCmds        [][]string
+	AirGapCmd            []string
+	PrepWorkdirCmd       []string
+	VerifySoftwareCmd    []string
+	VerifyYubiHSMCmd     []string
+	VerifyPKCS11Cmd      []string
+	EnrollCmds           [][]string
+	GenerateKeyCmd       []string
+	GenerateHSMKeyCmd    []string
+	SSSSplitCmd          []string
+	EncryptCmds          [][]string
 	VerifyReconstructCmd []string
-	ImportWrapKeyCmd   []string
-	CleanupCmd         []string
-	RecoveryDecryptCmds [][]string
-	RecoveryCombineCmd []string
+	ImportWrapKeyCmd     []string
+	CleanupCmd           []string
+	RecoveryDecryptCmds  [][]string
+	RecoveryCombineCmd   []string
 
 	// Derived flags
-	IsRecovery       bool
-	IsHSMKeygen      bool
-	IncludeUSBDrives bool
+	IsRecovery        bool
+	IsHSMKeygen       bool
+	IncludeUSBDrives  bool
 	USBDrivesPerShare int
-	StorageNote      string
+	IncludeHSM        bool
+	IsYubiHSM         bool
+	IsPKCS11          bool
+	HSMDisplayName    string
+	StorageNote       string
 
 	// Recovery ceremony: indices of custodians who decrypt
 	RecoveryCustodians []int
@@ -54,6 +59,7 @@ func (d *templateData) CeremonyDescription() string {
 	return d.Config.CeremonyType.Description(
 		d.Config.Shamir.Shares,
 		d.Config.Shamir.Threshold,
+		d.HSMDisplayName,
 	)
 }
 
@@ -69,6 +75,11 @@ func Generate(cfg *Config) (string, error) {
 	isRecovery := cfg.CeremonyType == CeremonyRecovery
 	isKeygen := cfg.CeremonyType == CeremonyRootCAKeygen
 	includeUSB := cfg.Options.ShareStorage == StorageUSB || cfg.Options.ShareStorage == StorageBoth
+
+	hsmType := cfg.Options.HSMType
+	includeHSM := hsmType == HSMYubiHSM || hsmType == HSMPKCS11
+	isYubiHSM := hsmType == HSMYubiHSM
+	isPKCS11 := hsmType == HSMPKCS11
 
 	// Build per-custodian command slices
 	enrollCmds := make([][]string, n)
@@ -108,10 +119,28 @@ func Generate(cfg *Config) (string, error) {
 	}
 
 	var genKeyCmd []string
-	if isKeygen {
+	var genHSMKeyCmd []string
+	var verifyPKCS11Cmd []string
+	var importWrapKeyCmd []string
+
+	switch {
+	case isKeygen && isPKCS11:
+		genKeyCmd = CmdPKCS11GenerateWrapKey(cfg.PKCS11.ModulePath, cfg.PKCS11.TokenLabel, cfg.CADisplay())
+		genHSMKeyCmd = CmdPKCS11GenerateKey(cfg.PKCS11.ModulePath, cfg.PKCS11.TokenLabel, cfg.CADisplay())
+	case isKeygen:
 		genKeyCmd = CmdGenerateYubiHSMWrapKey(cfg.CADisplay())
-	} else {
+		genHSMKeyCmd = CmdGenerateYubiHSMKey(cfg.CADisplay())
+	case isPKCS11:
 		genKeyCmd = CmdGenerateWrapKey()
+	default:
+		genKeyCmd = CmdGenerateWrapKey()
+	}
+
+	if isPKCS11 {
+		verifyPKCS11Cmd = CmdVerifyPKCS11Token(cfg.PKCS11.ModulePath, cfg.PKCS11.TokenLabel)
+		importWrapKeyCmd = CmdPKCS11ImportWrapKey(cfg.PKCS11.ModulePath, cfg.PKCS11.TokenLabel, cfg.CADisplay())
+	} else if isYubiHSM {
+		importWrapKeyCmd = CmdImportWrapKey(cfg.CADisplay())
 	}
 
 	d := &templateData{
@@ -119,15 +148,16 @@ func Generate(cfg *Config) (string, error) {
 		GeneratedAt:          time.Now().UTC().Format("2006-01-02 15:04:05"),
 		AirGapCmd:            CmdVerifyAirGap(),
 		PrepWorkdirCmd:       CmdPrepareWorkdir(),
-		VerifySoftwareCmd:    CmdVerifySoftware(cfg.Options.IncludeYubiHSMImport),
+		VerifySoftwareCmd:    CmdVerifySoftware(hsmType),
 		VerifyYubiHSMCmd:     CmdVerifyYubiHSM(),
+		VerifyPKCS11Cmd:      verifyPKCS11Cmd,
 		EnrollCmds:           enrollCmds,
 		GenerateKeyCmd:       genKeyCmd,
-		GenerateHSMKeyCmd:    CmdGenerateYubiHSMKey(cfg.CADisplay()),
+		GenerateHSMKeyCmd:    genHSMKeyCmd,
 		SSSSplitCmd:          CmdSSSplit(n, m),
 		EncryptCmds:          encryptCmds,
 		VerifyReconstructCmd: CmdVerifyReconstruct(m),
-		ImportWrapKeyCmd:     CmdImportWrapKey(cfg.CADisplay()),
+		ImportWrapKeyCmd:     importWrapKeyCmd,
 		CleanupCmd:           CmdSecureCleanup(),
 		RecoveryDecryptCmds:  recoveryDecryptCmds,
 		RecoveryCombineCmd:   CmdRecoveryCombine(m),
@@ -135,6 +165,10 @@ func Generate(cfg *Config) (string, error) {
 		IsHSMKeygen:          isKeygen,
 		IncludeUSBDrives:     includeUSB,
 		USBDrivesPerShare:    cfg.Options.USBDrivesPerShare,
+		IncludeHSM:           includeHSM,
+		IsYubiHSM:            isYubiHSM,
+		IsPKCS11:             isPKCS11,
+		HSMDisplayName:       hsmType.DisplayName(),
 		StorageNote:          cfg.Options.ShareStorage.Note(cfg.Options.USBDrivesPerShare),
 		RecoveryCustodians:   recoveryCustodians,
 		CleanupSectionNum:    cleanupNum,

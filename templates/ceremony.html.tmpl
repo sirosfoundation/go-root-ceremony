@@ -146,7 +146,8 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
   <li>{{.Config.Shamir.Shares}} × YubiKey 5 Series (one per custodian) — factory-reset or known-good state</li>
   {{if .IncludeUSBDrives}}<li>{{mul .Config.Shamir.Shares .USBDrivesPerShare}} × dedicated USB drives ({{.USBDrivesPerShare}} per custodian, labelled Custodian N — Copy 1/{{.USBDrivesPerShare}} through {{.USBDrivesPerShare}}/{{.USBDrivesPerShare}}, never previously used)</li>{{end}}
   <li>Video camera for ceremony recording — mandatory audit trail per EN 319 401 §7.6-13</li>
-  {{if .Config.Options.IncludeYubiHSMImport}}<li>2 × YubiHSM 2 FIPS (serial numbers recorded below) for CA key storage</li>{{end}}
+  {{if .IsYubiHSM}}<li>2 × YubiHSM 2 FIPS (serial numbers recorded below) for CA key storage</li>{{end}}
+  {{if .IsPKCS11}}<li>PKCS#11 HSM device (or SoftHSM 2 for testing) — module: <code>{{.Config.PKCS11.ModulePath}}</code></li>{{end}}
   <li>Printed copy of this ceremony script (this document)</li>
   <li>Printed log sheets for recording ceremony artifacts</li>
   <li>Permanent markers for labelling USB drives</li>
@@ -160,7 +161,8 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
   <li>age installed — <code>apt install age</code> / <code>brew install age</code></li>
   <li>age-plugin-yubikey installed — binary from <code>github.com/str4d/age-plugin-yubikey/releases</code></li>
   <li>ykman installed — <code>apt install yubikey-manager</code></li>
-  {{if .Config.Options.IncludeYubiHSMImport}}<li>yubihsm-shell installed — from Yubico packages</li>{{end}}
+  {{if .IsYubiHSM}}<li>yubihsm-shell installed — from Yubico packages</li>{{end}}
+  {{if .IsPKCS11}}<li>softhsm2-util and pkcs11-tool (OpenSC) installed</li>{{end}}
   <li>All version strings recorded in ceremony log</li>
 </ul>
 
@@ -193,7 +195,7 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
   </ul>
 </div>
 
-{{if .Config.Options.IncludeYubiHSMImport}}
+{{if .IsYubiHSM}}
 <div class="step">
   <div class="step-num">Step 3</div>
   <strong>Verify YubiHSM Devices</strong>
@@ -202,6 +204,21 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
     <li>YubiHSM 2 FIPS device #1 detected — Serial No.: __________</li>
     <li>YubiHSM 2 FIPS device #2 detected — Serial No.: __________</li>
     <li>Both devices confirmed FIPS 140-2 Level 3 (Cert #3916)</li>
+  </ul>
+</div>
+{{end}}
+
+{{if .IsPKCS11}}
+<div class="step">
+  <div class="step-num">Step 3</div>
+  <strong>Initialise PKCS#11 Token</strong>
+  <p>Initialise the PKCS#11 token. Set the SO PIN and User PIN when prompted. Record both PINs in the ceremony log.</p>
+  {{codeblock .VerifyPKCS11Cmd}}
+  <ul class="checklist">
+    <li>PKCS#11 module loaded: <code>{{.Config.PKCS11.ModulePath}}</code></li>
+    <li>Token label: <code>{{.Config.PKCS11.TokenLabel}}</code></li>
+    <li>SO PIN set and recorded securely</li>
+    <li>User PIN set and recorded securely</li>
   </ul>
 </div>
 {{end}}
@@ -359,7 +376,8 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
   </div>
 </div>
 
-{{if .Config.Options.IncludeYubiHSMImport}}
+{{if .IncludeHSM}}
+{{if .IsYubiHSM}}
 <div class="step">
   <div class="step-num">Step 9b</div>
   <strong>Import Wrap Key into YubiHSM (both devices)</strong>
@@ -369,6 +387,18 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
     <li>Wrap key object (ID 0x0100) confirmed on YubiHSM #2 (SN: __________)</li>
   </ul>
 </div>
+{{end}}
+{{if .IsPKCS11}}
+<div class="step">
+  <div class="step-num">Step 9b</div>
+  <strong>Import Wrap Key into PKCS#11 Token</strong>
+  {{codeblock .ImportWrapKeyCmd}}
+  <ul class="checklist">
+    <li>Wrap key object confirmed in token <code>{{.Config.PKCS11.TokenLabel}}</code></li>
+    <li>Temporary binary file shredded</li>
+  </ul>
+</div>
+{{end}}
 {{end}}
 {{end}}
 
@@ -408,9 +438,17 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
     <tr><td>Operator</td><td>{{.Config.OperatorDisplay}}</td></tr>
     <tr><td>SSS Parameters</td><td>{{.Config.Shamir.Threshold}}-of-{{.Config.Shamir.Shares}}</td></tr>
     <tr><td>Share Storage</td><td>{{.StorageNote}}</td></tr>
-    {{if .Config.Options.IncludeYubiHSMImport}}
+    {{if .IsYubiHSM}}
+    <tr><td>HSM Type</td><td>YubiHSM 2 FIPS</td></tr>
     <tr><td>YubiHSM #1 Serial</td><td>__________</td></tr>
     <tr><td>YubiHSM #2 Serial</td><td>__________</td></tr>
+    {{end}}
+    {{if .IsPKCS11}}
+    <tr><td>HSM Type</td><td>PKCS#11 — {{.Config.PKCS11.ModulePath}}</td></tr>
+    <tr><td>Token Label</td><td>{{.Config.PKCS11.TokenLabel}}</td></tr>
+    {{end}}
+    {{if not .IncludeHSM}}
+    <tr><td>HSM Type</td><td>None</td></tr>
     {{end}}
     <tr><td>Video Recording Reference</td><td>__________</td></tr>
   </tbody>

@@ -99,6 +99,7 @@ func runGenerate(args []string) {
 	fmt.Printf("  Organisation : %s\n", cfg.OrgDisplay())
 	fmt.Printf("  CA           : %s\n", cfg.CADisplay())
 	fmt.Printf("  Type         : %s\n", cfg.CeremonyType.Title())
+	fmt.Printf("  HSM          : %s\n", cfg.Options.HSMType.DisplayName())
 	fmt.Printf("  SSS          : %d-of-%d\n", cfg.Shamir.Threshold, cfg.Shamir.Shares)
 }
 
@@ -131,6 +132,7 @@ func runInit(args []string) {
 
 	header := "# go-root-ceremony configuration\n" +
 		"# ceremony_type: root-ca-wrap | root-ca-keygen | issuing-wrap | recovery\n" +
+		"# hsm_type:       yubihsm | pkcs11 | none\n" +
 		"# share_storage:  usb | print | both\n\n"
 
 	if err := os.WriteFile(*outputPath, append([]byte(header), data...), 0600); err != nil {
@@ -191,7 +193,22 @@ func promptConfig() (Config, error) {
 
 	fmt.Println("\nOptions:")
 	cfg.Options.IncludeVerification = promptBool(r, "Include live verification step", true)
-	cfg.Options.IncludeYubiHSMImport = promptBool(r, "Include YubiHSM wrap-key import", true)
+
+	fmt.Println("HSM type:")
+	fmt.Println("  1) yubihsm — Yubico YubiHSM 2 FIPS")
+	fmt.Println("  2) pkcs11  — PKCS#11 HSM (SoftHSM, Thales Luna, etc.)")
+	fmt.Println("  3) none    — No HSM (wrap key generation only)")
+	switch promptN(r, "HSM type [1-3]", 1, 1, 3) {
+	case 1:
+		cfg.Options.HSMType = HSMYubiHSM
+	case 2:
+		cfg.Options.HSMType = HSMPKCS11
+		cfg.PKCS11.ModulePath = prompt(r, "  PKCS#11 module path", "/usr/lib/softhsm/libsofthsm2.so")
+		cfg.PKCS11.TokenLabel = prompt(r, "  Token label", "RootCA")
+	case 3:
+		cfg.Options.HSMType = HSMNone
+	}
+
 	cfg.Options.USBDrivesPerShare = promptN(r, "USB drives per share (for redundancy)", 2, 1, 5)
 
 	fmt.Println("Share storage method:")

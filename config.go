@@ -34,16 +34,17 @@ func (t CeremonyType) Title() string {
 	}
 }
 
-func (t CeremonyType) Description(n, m int) string {
+func (t CeremonyType) Description(n, m int, hsmName string) string {
 	switch t {
 	case CeremonyRootCAWrap:
 		return fmt.Sprintf(
 			"This ceremony establishes a new cryptographic wrap key for the Root CA signing "+
-				"key stored in YubiHSM 2 FIPS. The wrap key is split across %d custodians using "+
-				"Shamir Secret Sharing; any %d custodians must be present to reconstruct it.", n, m)
+				"key stored in %s. The wrap key is split across %d custodians using "+
+				"Shamir Secret Sharing; any %d custodians must be present to reconstruct it.", hsmName, n, m)
 	case CeremonyRootCAKeygen:
-		return "This ceremony generates the Root CA private key inside a YubiHSM 2 FIPS device " +
-			"and establishes a wrap key for key backup and recovery."
+		return fmt.Sprintf(
+			"This ceremony generates the Root CA private key inside a %s device "+
+				"and establishes a wrap key for key backup and recovery.", hsmName)
 	case CeremonyIssuingWrap:
 		return fmt.Sprintf(
 			"This ceremony establishes a new wrap key for the Issuing CA. The wrap key is "+
@@ -84,6 +85,32 @@ func (s StorageMethod) Note(drivesPerShare int) string {
 	}
 }
 
+// HSMType identifies the HSM backend used in the ceremony.
+type HSMType string
+
+const (
+	HSMNone    HSMType = "none"
+	HSMYubiHSM HSMType = "yubihsm"
+	HSMPKCS11  HSMType = "pkcs11"
+)
+
+func (h HSMType) DisplayName() string {
+	switch h {
+	case HSMYubiHSM:
+		return "YubiHSM 2 FIPS"
+	case HSMPKCS11:
+		return "PKCS#11 HSM"
+	default:
+		return "(no HSM)"
+	}
+}
+
+// PKCS11Config holds PKCS#11 module settings.
+type PKCS11Config struct {
+	ModulePath string `yaml:"module_path"`
+	TokenLabel string `yaml:"token_label"`
+}
+
 // Person is a named ceremony participant.
 type Person struct {
 	Name string `yaml:"name"`
@@ -117,10 +144,10 @@ func (s ShamirConfig) Validate() error {
 
 // Options holds optional ceremony steps.
 type Options struct {
-	IncludeVerification  bool          `yaml:"include_verification"`
-	IncludeYubiHSMImport bool          `yaml:"include_yubihsm_import"`
-	ShareStorage         StorageMethod `yaml:"share_storage"`
-	USBDrivesPerShare    int           `yaml:"usb_drives_per_share"`
+	IncludeVerification bool          `yaml:"include_verification"`
+	HSMType             HSMType       `yaml:"hsm_type"`
+	ShareStorage        StorageMethod `yaml:"share_storage"`
+	USBDrivesPerShare   int           `yaml:"usb_drives_per_share"`
 }
 
 // Config is the top-level ceremony configuration.
@@ -135,6 +162,7 @@ type Config struct {
 	Custodians   []Person     `yaml:"custodians"`
 	Witnesses    []Person     `yaml:"witnesses"`
 	Options      Options      `yaml:"options"`
+	PKCS11       PKCS11Config `yaml:"pkcs11,omitempty"`
 }
 
 // DefaultConfig returns sensible defaults for a new ceremony config.
@@ -153,10 +181,10 @@ func DefaultConfig() Config {
 		Custodians: make([]Person, 5),
 		Witnesses:  make([]Person, 2),
 		Options: Options{
-			IncludeVerification:  true,
-			IncludeYubiHSMImport: true,
-			ShareStorage:         StorageUSB,
-			USBDrivesPerShare:    2,
+			IncludeVerification: true,
+			HSMType:             HSMYubiHSM,
+			ShareStorage:        StorageUSB,
+			USBDrivesPerShare:   2,
 		},
 	}
 }
@@ -181,6 +209,19 @@ func (c *Config) Validate() error {
 	}
 	if c.Options.USBDrivesPerShare < 1 {
 		c.Options.USBDrivesPerShare = 2
+	}
+	// Default HSM type if empty
+	if c.Options.HSMType == "" {
+		c.Options.HSMType = HSMYubiHSM
+	}
+	// PKCS#11 defaults
+	if c.Options.HSMType == HSMPKCS11 {
+		if c.PKCS11.ModulePath == "" {
+			c.PKCS11.ModulePath = "/usr/lib/softhsm/libsofthsm2.so"
+		}
+		if c.PKCS11.TokenLabel == "" {
+			c.PKCS11.TokenLabel = "RootCA"
+		}
 	}
 	if len(c.Custodians) != c.Shamir.Shares {
 		// Pad or trim to match shares
