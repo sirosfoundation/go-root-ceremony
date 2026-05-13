@@ -37,7 +37,7 @@ func CmdTestRNGEntropy(rngDevice string) []string {
 		"# Test 2: rngtest (from rng-tools) — FIPS 140-2 statistical tests",
 		"# Runs Monobit, Poker, Runs, and Long Runs tests",
 		"# Acceptable: 0 failures in 1000+ blocks",
-		fmt.Sprintf(`dd if=%s bs=2500 count=100 2>/dev/null | rngtest --blockcount=100`, rngDevice),
+		fmt.Sprintf(`dd if=%s bs=2500 count=101 2>/dev/null | rngtest --blockcount=100`, rngDevice),
 		"",
 		"# Test 3: Compression ratio — truly random data is incompressible",
 		`ORIG=$(wc -c < /tmp/ceremony/rng-sample.bin)`,
