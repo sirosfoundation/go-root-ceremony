@@ -220,6 +220,11 @@ func promptConfig() (Config, error) {
 		cfg.Options.ExternalKeyGen = promptBool(r, "Generate key outside HSM using dedicated RNG device", false)
 		if cfg.Options.ExternalKeyGen {
 			cfg.Options.RNGDevice = prompt(r, "  RNG device path", "/dev/hwrng")
+			cfg.Options.GenerateCert = promptBool(r, "  Generate a self-signed certificate based on the private key", false)
+			if cfg.Options.GenerateCert {
+				cfg.Options.CertSubject = prompt(r, "    Subject for Certificate", "/CN=Our CA/O=Our Company/C=SE")
+				cfg.Options.CertValidity = promptN(r, "    Validity of Certificate in days", 3650, 45, 7310)
+			}
 		}
 	}
 

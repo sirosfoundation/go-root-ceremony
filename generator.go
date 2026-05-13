@@ -24,6 +24,7 @@ type templateData struct {
 	VerifyYubiHSMCmd     []string
 	VerifyPKCS11Cmd      []string
 	VerifyRNGCmd         []string
+	GenerateCertCmd      []string
 	TestRNGCmd           []string
 	EnrollCmds           [][]string
 	GenerateKeyCmd       []string
@@ -38,18 +39,20 @@ type templateData struct {
 	RecoveryCombineCmd   []string
 
 	// Derived flags
-	IsRecovery        bool
-	IsHSMKeygen       bool
-	IsExternalKeyGen  bool
-	IncludeUSBDrives  bool
-	USBDrivesPerShare int
-	IncludeHSM        bool
-	IsYubiHSM         bool
-	IsPKCS11          bool
-	IsNetworkHSM      bool
-	HSMDisplayName    string
-	RNGDevice         string
-	StorageNote       string
+	IsRecovery          bool
+	IsHSMKeygen         bool
+	IsExternalKeyGen    bool
+	IsExportExternalKey bool
+	IsGenerateCert      bool
+	IncludeUSBDrives    bool
+	USBDrivesPerShare   int
+	IncludeHSM          bool
+	IsYubiHSM           bool
+	IsPKCS11            bool
+	IsNetworkHSM        bool
+	HSMDisplayName      string
+	RNGDevice           string
+	StorageNote         string
 
 	// Recovery ceremony: indices of custodians who decrypt
 	RecoveryCustodians []int
@@ -130,9 +133,12 @@ func Generate(cfg *Config) (string, error) {
 	var importWrapKeyCmd []string
 	var importExternalKeyCmd []string
 	var verifyRNGCmd []string
+	var generateCertCmd []string
 	var testRNGCmd []string
 
 	isExternalKeyGen := cfg.Options.ExternalKeyGen && isKeygen
+	isExportExternalKey := isExternalKeyGen && !includeHSM
+	isGenerateCert := cfg.Options.GenerateCert && isExternalKeyGen
 	rngDevice := cfg.Options.RNGDevice
 
 	switch {
@@ -144,6 +150,10 @@ func Generate(cfg *Config) (string, error) {
 		genKeyCmd = CmdGenerateKeyFromRNG(rngDevice)
 		genHSMKeyCmd = CmdGenerateCAKeyFromRNG(rngDevice, cfg.CADisplay())
 		importExternalKeyCmd = CmdImportExternalKeyToYubiHSM(cfg.CADisplay())
+	case isExternalKeyGen:
+		genKeyCmd = CmdGenerateKeyFromRNG(rngDevice)
+		genHSMKeyCmd = CmdGenerateCAKeyFromRNG(rngDevice, cfg.CADisplay())
+		importExternalKeyCmd = CmdExportExternalKeyToUSB()
 	case isKeygen && isPKCS11:
 		genKeyCmd = CmdPKCS11GenerateWrapKey(cfg.PKCS11.ModulePath, cfg.PKCS11.TokenLabel, cfg.CADisplay())
 		genHSMKeyCmd = CmdPKCS11GenerateKey(cfg.PKCS11.ModulePath, cfg.PKCS11.TokenLabel, cfg.CADisplay())
@@ -159,6 +169,12 @@ func Generate(cfg *Config) (string, error) {
 	if isExternalKeyGen {
 		verifyRNGCmd = CmdVerifyRNGDevice(rngDevice)
 		testRNGCmd = CmdTestRNGEntropy(rngDevice)
+	}
+
+	if isGenerateCert {
+		certSubject := cfg.Options.CertSubject
+		certValidity := cfg.Options.CertValidity
+		generateCertCmd = CmdGenerateCACertificate(certSubject, certValidity)
 	}
 
 	if isPKCS11 {
@@ -210,6 +226,9 @@ func Generate(cfg *Config) (string, error) {
 		IsRecovery:           isRecovery,
 		IsHSMKeygen:          isKeygen,
 		IsExternalKeyGen:     isExternalKeyGen,
+		IsExportExternalKey:  isExportExternalKey,
+		IsGenerateCert:       isGenerateCert,
+		GenerateCertCmd:      generateCertCmd,
 		IncludeUSBDrives:     includeUSB,
 		USBDrivesPerShare:    cfg.Options.USBDrivesPerShare,
 		IncludeHSM:           includeHSM,

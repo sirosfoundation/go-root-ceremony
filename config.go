@@ -152,6 +152,21 @@ type Options struct {
 	USBDrivesPerShare   int           `yaml:"usb_drives_per_share"`
 	ExternalKeyGen      bool          `yaml:"external_keygen,omitempty"`
 	RNGDevice           string        `yaml:"rng_device,omitempty"`
+	GenerateCert        bool          `yaml:"generate_cert,omitempty"`
+	CertSubject         string        `yaml:"certificate_subject,omitempty"`
+	CertValidity        int           `yaml:"certificate_validity,omitempty"`
+}
+
+func (o Options) Validate() error {
+	if o.GenerateCert {
+		if o.CertValidity < 45 {
+			return fmt.Errorf("certificate_validity must be at least 45, got %d", o.CertValidity)
+		}
+		if o.CertSubject == "" {
+			return fmt.Errorf("certificate_subject is required when generate_cert is enabled")
+		}
+	}
+	return nil
 }
 
 // Config is the top-level ceremony configuration.
@@ -209,6 +224,9 @@ func LoadConfig(path string) (Config, error) {
 // Validate checks the config is consistent and complete enough to generate a script.
 func (c *Config) Validate() error {
 	if err := c.Shamir.Validate(); err != nil {
+		return err
+	}
+	if err := c.Options.Validate(); err != nil {
 		return err
 	}
 	if c.Options.USBDrivesPerShare < 1 {
