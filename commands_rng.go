@@ -18,8 +18,6 @@ func CmdVerifyRNGDevice(rngDevice string) []string {
 		`cat /sys/class/misc/hw_random/rng_current 2>/dev/null || echo "(kernel hw_random not applicable)"`,
 		`cat /sys/class/misc/hw_random/rng_available 2>/dev/null || echo "(no kernel RNG info)"`,
 		"",
-		"# Check if rng-tools daemon is active (feeds hwrng → /dev/random)",
-		`systemctl is-active rng-tools 2>/dev/null || systemctl is-active rngd 2>/dev/null || echo "rng-tools not running (optional)"`,
 	}
 }
 
