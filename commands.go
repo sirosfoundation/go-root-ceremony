@@ -236,7 +236,7 @@ func CmdSSSplit(n, m int) []string {
 		"done",
 		"",
 		fmt.Sprintf("# Confirm all %d share files exist", n),
-		fmt.Sprintf(`ls -1 share-*.txt | wc -l`),
+		`ls -1 share-*.txt | wc -l`,
 		fmt.Sprintf("# Expected: %d", n),
 	}
 }
