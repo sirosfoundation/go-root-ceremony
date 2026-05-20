@@ -102,12 +102,13 @@ func CmdPrepareWorkdir() []string {
 func CmdVerifySoftware(hsmType HSMType) []string {
 	lines := []string{
 		"# Verify installed tools",
-		"which ssss-split ssss-combine age age-plugin-yubikey ykman",
+		"which ssss-split ssss-combine age age-plugin-yubikey ykman ent",
 		"",
 		"# Print versions for ceremony log",
 		`ssss-split --version 2>&1 | head -1`,
 		"age --version",
 		"age-plugin-yubikey --version",
+		"ent -u",
 		"ykman --version",
 	}
 	switch hsmType {
