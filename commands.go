@@ -290,7 +290,7 @@ func CmdVerifyReconstruct(m int) []string {
 	lines = append(lines,
 		"",
 		fmt.Sprintf("# Combine the %d decrypted shares", m),
-		fmt.Sprintf("cat %s | ssss-combine -t %d -x > reconstructed.txt", shareFiles, m),
+		fmt.Sprintf("cat %s | ssss-combine -t %d -x 2> reconstructed.txt", shareFiles, m),
 		"",
 		"# Automated comparison — secrets are NOT displayed on screen",
 		`if [ "$(cat reconstructed.txt)" = "${WRAP_KEY}" ]; then`,
