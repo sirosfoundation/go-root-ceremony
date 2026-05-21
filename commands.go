@@ -229,7 +229,7 @@ func CmdSSSplit(n, m int) []string {
 		"# -x   = hex input/output mode (required for binary secrets)",
 		"# -s 256 = prime field size in bits (must be >= secret bit length)",
 		"# Output is written directly to individual share files (never shown on screen)",
-		fmt.Sprintf(`echo -n "${WRAP_KEY}" | ssss-split -t %d -n %d -x -s 256 | while IFS= read -r line; do`, m, n),
+		fmt.Sprintf(`echo -n "${WRAP_KEY}" | ssss-split -q -t %d -n %d -x -s 256 | while IFS= read -r line; do`, m, n),
 		`  NUM=$(echo "$line" | cut -d- -f1)`,
 		`  echo "$line" > "share-${NUM}.txt"`,
 		`  echo "Share ${NUM} written to share-${NUM}.txt"`,
