@@ -113,6 +113,7 @@ func runInit(args []string) {
 	cfg.CAName = "Example Root CA G1"
 	cfg.Location = "Secure Room, Building A"
 	cfg.Operator = "Jane Doe"
+	cfg.Notetaker = ""
 	cfg.Custodians = []Person{
 		{Name: "Alice Andersson"},
 		{Name: "Bob Bergström"},
@@ -158,6 +159,7 @@ func promptConfig() (Config, error) {
 	cfg.Location = prompt(r, "Ceremony location", "")
 	cfg.Date = prompt(r, "Ceremony date (YYYY-MM-DD)", cfg.Date)
 	cfg.Operator = prompt(r, "Ceremony operator name", "")
+	cfg.Notetaker = prompt(r, "Ceremony notetaker name", "")
 
 	fmt.Println("\nCeremony type:")
 	fmt.Println("  1) root-ca-wrap    — Root CA wrap key generation")

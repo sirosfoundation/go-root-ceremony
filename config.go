@@ -176,6 +176,7 @@ type Config struct {
 	Location     string       `yaml:"location"`
 	Date         string       `yaml:"date"`
 	Operator     string       `yaml:"operator"`
+	Notetaker    string       `yaml:"notetaker"`
 	CeremonyType CeremonyType `yaml:"ceremony_type"`
 	Shamir       ShamirConfig `yaml:"shamir"`
 	Custodians   []Person     `yaml:"custodians"`
@@ -192,6 +193,7 @@ func DefaultConfig() Config {
 		Location:     "",
 		Date:         time.Now().Format("2006-01-02"),
 		Operator:     "",
+		Notetaker:    "",
 		CeremonyType: CeremonyRootCAWrap,
 		Shamir: ShamirConfig{
 			Shares:    5,
@@ -306,4 +308,11 @@ func (c *Config) OperatorDisplay() string {
 		return c.Operator
 	}
 	return "[Operator Name]"
+}
+
+func (c *Config) NotetakerDisplay() string {
+	if c.Notetaker != "" {
+		return c.Notetaker
+	}
+	return c.Operator
 }

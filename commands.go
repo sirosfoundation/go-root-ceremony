@@ -312,7 +312,7 @@ func CmdRecoveryDecrypt(i int) []string {
 		fmt.Sprintf(
 			"age-plugin-yubikey --identity | age --decrypt -i - custodian%d.share.age",
 			i+1),
-		"# Note the decrypted share value and give it to the Operator",
+		"# Note the decrypted share value and give it to the Operator/Notetaker",
 	}
 }
 

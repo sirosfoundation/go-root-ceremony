@@ -98,7 +98,8 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
     <span class="key">Date</span>          <span>{{.Config.Date}}</span>
     <span class="key">Location</span>      <span>{{.Config.LocationDisplay}}</span>
     <span class="key">Operator</span>      <span>{{.Config.OperatorDisplay}}</span>
-    <span class="key">Custodians</span>    <span>{{.Config.Shamir.Shares}} (threshold: any {{.Config.Shamir.Threshold}})</span>
+    {{if not (eq .Config.OperatorDisplay .Config.NotetakerDisplay)}}<span class="key">Notetaker</span>      <span>{{.Config.NotetakerDisplay}}</span>
+    {{end}}<span class="key">Custodians</span>    <span>{{.Config.Shamir.Shares}} (threshold: any {{.Config.Shamir.Threshold}})</span>
     <span class="key">Document Ver.</span> <span>1.0 — Generated {{.GeneratedAt}} UTC</span>
     <span class="key">Standards</span>     <span>EN 319 401 §7.5/7.6 · TS 119 431-1 V1.3.1</span>
   </div>
@@ -121,7 +122,8 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
   <thead><tr><th>Role</th><th>Name</th><th>Signature</th></tr></thead>
   <tbody>
     <tr><td>Ceremony Operator</td><td>{{.Config.OperatorDisplay}}</td><td class="sig-line"></td></tr>
-    {{range $i, $c := .Config.Custodians}}<tr><td>Custodian {{add $i 1}}</td><td>{{$.Config.CustodianName $i}}</td><td class="sig-line"></td></tr>
+    {{if not (eq .Config.OperatorDisplay .Config.NotetakerDisplay)}}<tr><td>Ceremony Notetaker</td><td>{{.Config.NotetakerDisplay}}</td><td class="sig-line"></td></tr>
+    {{end}}{{range $i, $c := .Config.Custodians}}<tr><td>Custodian {{add $i 1}}</td><td>{{$.Config.CustodianName $i}}</td><td class="sig-line"></td></tr>
     {{end}}{{range $i, $w := .Config.Witnesses}}<tr><td>Witness {{add $i 1}}</td><td>{{$.Config.WitnessName $i}}</td><td class="sig-line"></td></tr>
     {{end}}
   </tbody>
@@ -570,7 +572,8 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
     <tr><td>Date and Time</td><td>{{.Config.Date}} ____:____ UTC</td></tr>
     <tr><td>Location</td><td>{{.Config.LocationDisplay}}</td></tr>
     <tr><td>Operator</td><td>{{.Config.OperatorDisplay}}</td></tr>
-    <tr><td>SSS Parameters</td><td>{{.Config.Shamir.Threshold}}-of-{{.Config.Shamir.Shares}}</td></tr>
+    {{if not (eq .Config.OperatorDisplay .Config.NotetakerDisplay)}}<tr><td>Notetaker</td><td>{{.Config.NotetakerDisplay}}</td></tr>
+    {{end}}<tr><td>SSS Parameters</td><td>{{.Config.Shamir.Threshold}}-of-{{.Config.Shamir.Shares}}</td></tr>
     <tr><td>Share Storage</td><td>{{.StorageNote}}</td></tr>
     {{if .IsYubiHSM}}
     <tr><td>HSM Type</td><td>YubiHSM 2 FIPS</td></tr>
@@ -608,11 +611,12 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
 <h3>{{.SigSectionNum}} · Signature Page</h3>
 <p>By signing below, each party confirms that they were present throughout the ceremony, that it was conducted in accordance with this procedure, and that the ceremony log accurately reflects what occurred.</p>
 
-<h4>Ceremony Operator</h4>
+<h4>Ceremony Operator{{if not (eq .Config.OperatorDisplay .Config.NotetakerDisplay)}} / Notetaker{{end}}</h4>
 <table>
   <thead><tr><th>Name</th><th>Signature</th><th>Date</th></tr></thead>
   <tbody><tr><td>{{.Config.OperatorDisplay}}</td><td class="sig-line"></td><td class="sig-line"></td></tr></tbody>
-</table>
+  {{if not (eq .Config.OperatorDisplay .Config.NotetakerDisplay)}}<tbody><tr><td>{{.Config.NotetakerDisplay}}</td><td class="sig-line"></td><td class="sig-line"></td></tr></tbody>
+{{end}}</table>
 
 <h4>Custodians</h4>
 <table>
