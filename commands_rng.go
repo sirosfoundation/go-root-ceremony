@@ -200,6 +200,13 @@ func CmdExportExternalKeyToUSB() []string {
 		`echo ${WRAP_KEY} | openssl ec -aes256 -in ca-key.pem \`,
 		`  -out ca-key-backup.pem -passout stdin`,
 		"",
+	}
+}
+
+// CmdCleanupExternalKey returns commands to cleanup an externally generated
+// key.
+func CmdCleanupExternalKey() []string {
+	return []string{
 		"# Securely erase the plaintext private key",
 		"shred -u ca-key.pem ca-key.der",
 		`echo "Private key securely erased from workstation ✓"`,

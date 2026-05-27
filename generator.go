@@ -137,7 +137,7 @@ func Generate(cfg *Config) (string, error) {
 	var testRNGCmd []string
 
 	isExternalKeyGen := cfg.Options.ExternalKeyGen && isKeygen
-	isExportExternalKey := isExternalKeyGen && !includeHSM
+	isExportExternalKey := cfg.Options.ExportExternalKey && isExternalKeyGen
 	isGenerateCert := cfg.Options.GenerateCert && isExternalKeyGen
 	rngDevice := cfg.Options.RNGDevice
 
@@ -153,7 +153,11 @@ func Generate(cfg *Config) (string, error) {
 	case isExternalKeyGen:
 		genKeyCmd = CmdGenerateKeyFromRNG(rngDevice)
 		genHSMKeyCmd = CmdGenerateCAKeyFromRNG(rngDevice, cfg.CADisplay())
-		importExternalKeyCmd = CmdExportExternalKeyToUSB()
+		if isExportExternalKey {
+			importExternalKeyCmd = append(CmdExportExternalKeyToUSB(), CmdCleanupExternalKey()...)
+		} else {
+			importExternalKeyCmd = CmdCleanupExternalKey()
+		}
 	case isKeygen && isPKCS11:
 		genKeyCmd = CmdPKCS11GenerateWrapKey(cfg.PKCS11.ModulePath, cfg.PKCS11.TokenLabel, cfg.CADisplay())
 		genHSMKeyCmd = CmdPKCS11GenerateKey(cfg.PKCS11.ModulePath, cfg.PKCS11.TokenLabel, cfg.CADisplay())

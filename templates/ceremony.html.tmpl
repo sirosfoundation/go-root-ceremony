@@ -331,24 +331,30 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
 <div class="step">
   <div class="step-num">Step 6d</div>
 {{end}}
-{{if .IncludeHSM}}
+{{if .IncludeHSM}}{{if .IsExportExternalKey}}
+  <strong>Import CA Key into {{.HSMDisplayName}} / export encrypted Key into USB</strong>
+  <p>The externally generated private key is imported into the HSM and exported into a USB stick. After import, the plaintext key is securely erased from the workstation.</p>
+{{else}}
   <strong>Import CA Key into {{.HSMDisplayName}}</strong>
   <p>The externally generated private key is imported into the HSM. After import, the plaintext key is securely erased from the workstation.</p>
-  {{codeblock .ImportExternalKeyCmd}}
-  <ul class="checklist">
-    <li>Private key imported into HSM successfully</li>
-    <li>Key object visible in HSM object listing</li>
-    <li>Plaintext key securely erased from workstation RAM</li>
-  </ul>
-</div>
-{{else}}
+{{end}}
+{{else if .IsExportExternalKey}}
   <strong>Export encrypted CA Key into USB</strong>
   <p>The externally generated private key is exported into a USB stick. After export, the plaintext key is securely erased from the workstation.</p>
+{{else}}
+  <strong>NO import HSM OR export of encrypted CA Key into USB</strong>
+  <p>use other than hsm = none OR export_external_key: true. The plaintext key is securely erased from the workstation.</p>
+{{end}}
   {{codeblock .ImportExternalKeyCmd}}
   <ul class="checklist">
+{{if .IncludeHSM}}
+    <li>Private key imported into HSM successfully</li>
+    <li>Key object visible in HSM object listing</li>
+{{end}}
     <li>Plaintext key securely erased from workstation RAM</li>
   </ul>
 </div>
+{{if .IsExportExternalKey}}
 <p>Copy <code>ca-key-backup.pem</code> to a dedicated USB drive. Eject the drive and place in a separate tamper-evident bag.</p>
 <table>
   <thead><tr><th>Copy</th><th>USB Label</th><th>Storage Location</th><th>Copied ☑</th></tr></thead>
