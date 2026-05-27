@@ -85,7 +85,7 @@ witnesses:
   - name: "Grace"
 options:
   include_verification: true
-  hsm_type: "yubihsm"          # yubihsm | pkcs11 | none
+  hsm_type: "yubihsm"          # yubihsm | pkcs11 | luna | none
   share_storage: "both"        # usb | print | both
   usb_drives_per_share: 2      # copies per custodian (1-5)
 ```
@@ -135,6 +135,12 @@ The generated ceremony scripts expect the following tools on the air-gapped cere
 - `softhsm2-util` — SoftHSM 2 token management (for testing; `apt install softhsm2`)
 - `pkcs11-tool` — PKCS#11 operations (from OpenSC; `apt install opensc`)
 - `openssl` — Public key format conversion
+
+### Luna/PKCS#11 backend (`hsm_type: luna`)
+
+This backend only works when ceremony_type is recovery
+- `openssl` — Public key format conversion
+
 
 ## Development
 

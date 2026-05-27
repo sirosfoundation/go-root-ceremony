@@ -95,11 +95,6 @@ func CmdGenerateCAKeyFromRNG(rngDevice, caName string) []string {
 		"# Verify key is valid",
 		"openssl ec -in ca-key.pem -check -noout",
 		fmt.Sprintf(`echo "%s signing key generated from external RNG ✓"`, caName),
-		"",
-		"# Convert private key to DER for HSM import",
-		"openssl ec -in ca-key.pem -outform DER -out ca-key.der",
-		"",
-		"# The private key will be imported into the HSM and then securely erased from RAM.",
 	}
 }
 
@@ -145,6 +140,11 @@ func sanitiseDNSubject(s string) string {
 // key into a YubiHSM 2.
 func CmdImportExternalKeyToYubiHSM(caName string) []string {
 	return []string{
+		"# Convert private key to DER for HSM import",
+		"openssl ec -in ca-key.pem -outform DER -out ca-key.der",
+		"",
+		"# The private key will be imported into the HSM and then securely erased from RAM.",
+		"",
 		"# Import externally generated key into YubiHSM 2 FIPS",
 		"yubihsm-shell \\",
 		"  --action put-asymmetric-key \\",
@@ -174,6 +174,11 @@ func CmdImportExternalKeyToPKCS11(modulePath, tokenLabel, caName string) []strin
 		fmt.Sprintf(`PKCS11_MODULE="%s"`, modulePath),
 		fmt.Sprintf(`TOKEN_LABEL="%s"`, tokenLabel),
 		"",
+		"# Convert private key to DER for HSM import",
+		"openssl ec -in ca-key.pem -outform DER -out ca-key.der",
+		"",
+		"# The private key will be imported into the HSM and then securely erased from RAM.",
+		"",
 		"# Import externally generated key into PKCS#11 token",
 		`pkcs11-tool --module "${PKCS11_MODULE}" \`,
 		`  --login --token-label "${TOKEN_LABEL}" \`,
@@ -189,6 +194,27 @@ func CmdImportExternalKeyToPKCS11(modulePath, tokenLabel, caName string) []strin
 		"# Securely erase the plaintext private key",
 		"shred -u ca-key.pem ca-key.der",
 		`echo "Private key securely erased from workstation ✓"`,
+	}
+}
+
+// CmdImportExternalKeyToLuna returns commands to import an externally generated
+// key into a Luna HSM.
+func CmdImportExternalKeyToLunaHSM(caName string) []string {
+	return []string{
+		"# Convert private key to DER for HSM import",
+		"openssl pkcs8 -topk8 -nocrypt -in ca-key.pem -outform DER -out ca-key.der",
+		"",
+		"# The private key will be imported into the HSM and then securely erased from RAM.",
+		"",
+		"# Import externally generated key into Lunas HSM",
+		`/usr/safenet/lunaclient/bin/cmu importkey -in ca-key.der -keyalg ECDSA  -PKCS8\`,
+		"# Enter User PIN when prompted",
+		"",
+		fmt.Sprintf(`cmu setattribute -handle <INT, output from importkey> -label "%s"`, caName),
+		"",
+		"# Verify the key was imported",
+		`/usr/safenet/lunaclient/bin/cmu list`,
+		"",
 	}
 }
 

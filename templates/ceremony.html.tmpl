@@ -169,6 +169,7 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
   <li>ykman installed — <code>apt install yubikey-manager</code></li>
   {{if .IsYubiHSM}}<li>yubihsm-shell installed — from Yubico packages</li>{{end}}
   {{if .IsPKCS11}}<li>softhsm2-util and pkcs11-tool (OpenSC) installed</li>{{end}}
+  {{if .IsLunaHSM}}<li>luna software installed</li>{{end}}
   {{if .IsNetworkHSM}}<li>iptables installed — for network firewall lockdown</li>{{end}}
   {{if .IsExternalKeyGen}}<li>ent (entropy testing) installed — <code>apt install ent</code></li>
   <li>rng-tools installed (provides rngtest) — <code>apt install rng-tools</code></li>{{end}}
