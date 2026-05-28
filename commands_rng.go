@@ -207,13 +207,13 @@ func CmdImportExternalKeyToLunaHSM(caName string) []string {
 		"# The private key will be imported into the HSM and then securely erased from RAM.",
 		"",
 		"# Import externally generated key into Lunas HSM",
-		`/usr/safenet/lunaclient/bin/cmu importkey -in ca-key.der -keyalg ECDSA  -PKCS8\`,
+		`cmu importkey -in ca-key.der -keyalg ECDSA  -PKCS8`,
 		"# Enter User PIN when prompted",
 		"",
 		fmt.Sprintf(`cmu setattribute -handle <INT, output from importkey> -label "%s"`, caName),
 		"",
 		"# Verify the key was imported",
-		`/usr/safenet/lunaclient/bin/cmu list`,
+		`cmu list`,
 		"",
 	}
 }

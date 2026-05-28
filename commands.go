@@ -116,6 +116,8 @@ func CmdVerifySoftware(hsmType HSMType) []string {
 		lines = append(lines, "yubihsm-shell --version")
 	case HSMPKCS11:
 		lines = append(lines, "softhsm2-util --version", "pkcs11-tool --version")
+	case HSMLunaHSM:
+		lines = append(lines, "PATH=$PATH:/usr/safenet/lunaclient/bin", "cmu | head -1")
 	}
 	return lines
 }
