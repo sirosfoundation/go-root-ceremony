@@ -210,7 +210,7 @@ func CmdImportExternalKeyToLunaHSM(caName string) []string {
 		`cmu importkey -in ca-key.der -keyalg ECDSA  -PKCS8`,
 		"# Enter User PIN when prompted",
 		"",
-		fmt.Sprintf(`cmu setattribute -handle <INT, output from importkey> -label "%s"`, caName),
+		fmt.Sprintf(`cmu setattribute -handle <INT, output from importkey> -label "%s Private Key"`, caName),
 		"",
 		"# Verify the key was imported",
 		`cmu list`,
