@@ -137,7 +137,8 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
   <li>All {{.Config.Shamir.Shares}} custodians physically present — identity verified with government-issued photo ID</li>
   <li>All {{len .Config.Witnesses}} witnesses physically present</li>
   <li>Ceremony operator present</li>
-  <li>No additional personnel in the room</li>
+  {{if not (eq .Config.OperatorDisplay .Config.NotetakerDisplay)}}<li>Ceremony notetaker present</li>
+  {{end}}<li>No additional personnel in the room</li>
   <li>All mobile phones and wireless devices removed from the room</li>
 </ul>
 
@@ -147,7 +148,7 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
   <li>Booted from verified read-only media (Tails OS recommended) or freshly installed offline OS</li>
   <li>{{.Config.Shamir.Shares}} × YubiKey 5 Series (one per custodian) — factory-reset or known-good state</li>
   {{if .IncludeUSBDrives}}<li>{{mul .Config.Shamir.Shares .USBDrivesPerShare}} × dedicated USB drives ({{.USBDrivesPerShare}} per custodian, labelled Custodian N — Copy 1/{{.USBDrivesPerShare}} through {{.USBDrivesPerShare}}/{{.USBDrivesPerShare}}, never previously used)</li>{{end}}
-  {{if .IsExternalKeyGen}}{{if not .IncludeHSM}}<li>2 × dedicated USB drives labelled Private key backup 1/2 and 2/2, never previously used</li>{{end}}{{end}}
+  {{if .IsExportExternalKey}}<li>2 × dedicated USB drives labelled Private key backup 1/2 and 2/2, never previously used</li>{{end}}
   {{if .IsGenerateCert}}<li>1 × dedicated USB drive labelled Public certificate, never previously used</li>{{end}}
   <li>Video camera for ceremony recording — mandatory audit trail per EN 319 401 §7.6-13</li>
   {{if .IsYubiHSM}}<li>2 × YubiHSM 2 FIPS (serial numbers recorded below) for CA key storage</li>{{end}}
@@ -157,7 +158,7 @@ td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
   <li>Printed log sheets for recording ceremony artifacts</li>
   <li>Permanent markers for labelling USB drives</li>
   {{if .IncludeUSBDrives}}<li>{{mul .Config.Shamir.Shares (add .USBDrivesPerShare  1)}} × tamper-evident bags (one per USB drive + one per YubiKey)</li>{{end}}
-  {{if .IsExternalKeyGen}}{{if not .IncludeHSM}}<li>2 × tamper-evident bags for USB drives with private key backup</li>{{end}}{{end}}
+  {{if .IsExportExternalKey}}<li>2 × tamper-evident bags for USB drives with private key backup</li>{{end}}
 </ul>
 
 <h4>3.3 Software (verify hashes before ceremony)</h4>
