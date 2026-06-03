@@ -214,7 +214,7 @@ func Generate(cfg *Config) (string, error) {
 		verifySoftwareCmd = append(verifySoftwareCmd, "iptables --version", "dig -v 2>&1 | head -1")
 	}
 	if isExternalKeyGen {
-		verifySoftwareCmd = append(verifySoftwareCmd, "ent --version 2>&1 | head -1 || which ent", "rngtest --version 2>&1 | head -1")
+		verifySoftwareCmd = append(verifySoftwareCmd, "rngtest --version 2>&1 | head -1")
 	}
 
 	d := &templateData{
