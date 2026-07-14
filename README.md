@@ -4,6 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/sirosfoundation/go-root-ceremony)](https://goreportcard.com/report/github.com/sirosfoundation/go-root-ceremony)
 [![CI](https://github.com/sirosfoundation/go-root-ceremony/actions/workflows/ci.yml/badge.svg)](https://github.com/sirosfoundation/go-root-ceremony/actions/workflows/ci.yml)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/sirosfoundation/go-root-ceremony)](go.mod)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/sirosfoundation/go-root-ceremony/badge)](https://scorecard.dev/viewer/?uri=github.com/sirosfoundation/go-root-ceremony)
 [![License](https://img.shields.io/github/license/sirosfoundation/go-root-ceremony)](LICENSE)
 
 Root CA key ceremony script generator. Produces self-contained, printable HTML ceremony scripts for performing high-security cryptographic operations using hardware security modules and Shamir Secret Sharing.
