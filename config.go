@@ -92,6 +92,7 @@ const (
 	HSMNone    HSMType = "none"
 	HSMYubiHSM HSMType = "yubihsm"
 	HSMPKCS11  HSMType = "pkcs11"
+	HSMLunaHSM HSMType = "luna"
 )
 
 func (h HSMType) DisplayName() string {
@@ -100,6 +101,8 @@ func (h HSMType) DisplayName() string {
 		return "YubiHSM 2 FIPS"
 	case HSMPKCS11:
 		return "PKCS#11 HSM"
+	case HSMLunaHSM:
+		return "Luna/PKCS#11 HSM"
 	default:
 		return "(no HSM)"
 	}
@@ -151,6 +154,7 @@ type Options struct {
 	ShareStorage        StorageMethod `yaml:"share_storage"`
 	USBDrivesPerShare   int           `yaml:"usb_drives_per_share"`
 	ExternalKeyGen      bool          `yaml:"external_keygen,omitempty"`
+	ExportExternalKey   bool          `yaml:"export_external_key,omitempty"`
 	RNGDevice           string        `yaml:"rng_device,omitempty"`
 	GenerateCert        bool          `yaml:"generate_cert,omitempty"`
 	CertSubject         string        `yaml:"certificate_subject,omitempty"`

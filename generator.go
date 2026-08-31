@@ -49,6 +49,7 @@ type templateData struct {
 	IncludeHSM          bool
 	IsYubiHSM           bool
 	IsPKCS11            bool
+	IsLunaHSM           bool
 	IsNetworkHSM        bool
 	HSMDisplayName      string
 	RNGDevice           string
@@ -86,9 +87,10 @@ func Generate(cfg *Config) (string, error) {
 	includeUSB := cfg.Options.ShareStorage == StorageUSB || cfg.Options.ShareStorage == StorageBoth
 
 	hsmType := cfg.Options.HSMType
-	includeHSM := hsmType == HSMYubiHSM || hsmType == HSMPKCS11
+	includeHSM := hsmType == HSMYubiHSM || hsmType == HSMPKCS11 || hsmType == HSMLunaHSM
 	isYubiHSM := hsmType == HSMYubiHSM
 	isPKCS11 := hsmType == HSMPKCS11
+	isLunaHSM := hsmType == HSMLunaHSM
 
 	// Build per-custodian command slices
 	enrollCmds := make([][]string, n)
@@ -137,7 +139,7 @@ func Generate(cfg *Config) (string, error) {
 	var testRNGCmd []string
 
 	isExternalKeyGen := cfg.Options.ExternalKeyGen && isKeygen
-	isExportExternalKey := isExternalKeyGen && !includeHSM
+	isExportExternalKey := cfg.Options.ExportExternalKey && isExternalKeyGen
 	isGenerateCert := cfg.Options.GenerateCert && isExternalKeyGen
 	rngDevice := cfg.Options.RNGDevice
 
@@ -146,6 +148,15 @@ func Generate(cfg *Config) (string, error) {
 		genKeyCmd = CmdGenerateKeyFromRNG(rngDevice)
 		genHSMKeyCmd = CmdGenerateCAKeyFromRNG(rngDevice, cfg.CADisplay())
 		importExternalKeyCmd = CmdImportExternalKeyToPKCS11(cfg.PKCS11.ModulePath, cfg.PKCS11.TokenLabel, cfg.CADisplay())
+	case isExternalKeyGen && isLunaHSM:
+		genKeyCmd = CmdGenerateKeyFromRNG(rngDevice)
+		genHSMKeyCmd = CmdGenerateCAKeyFromRNG(rngDevice, cfg.CADisplay())
+		if isExportExternalKey {
+			importExternalKeyCmd = append(CmdExportExternalKeyToUSB(), CmdImportExternalKeyToLunaHSM(cfg.CADisplay())...)
+		} else {
+			importExternalKeyCmd = CmdImportExternalKeyToLunaHSM(cfg.CADisplay())
+		}
+		importExternalKeyCmd = append(importExternalKeyCmd, CmdCleanupExternalKey()...)
 	case isExternalKeyGen && isYubiHSM:
 		genKeyCmd = CmdGenerateKeyFromRNG(rngDevice)
 		genHSMKeyCmd = CmdGenerateCAKeyFromRNG(rngDevice, cfg.CADisplay())
@@ -153,7 +164,11 @@ func Generate(cfg *Config) (string, error) {
 	case isExternalKeyGen:
 		genKeyCmd = CmdGenerateKeyFromRNG(rngDevice)
 		genHSMKeyCmd = CmdGenerateCAKeyFromRNG(rngDevice, cfg.CADisplay())
-		importExternalKeyCmd = CmdExportExternalKeyToUSB()
+		if isExportExternalKey {
+			importExternalKeyCmd = append(CmdExportExternalKeyToUSB(), CmdCleanupExternalKey()...)
+		} else {
+			importExternalKeyCmd = CmdCleanupExternalKey()
+		}
 	case isKeygen && isPKCS11:
 		genKeyCmd = CmdPKCS11GenerateWrapKey(cfg.PKCS11.ModulePath, cfg.PKCS11.TokenLabel, cfg.CADisplay())
 		genHSMKeyCmd = CmdPKCS11GenerateKey(cfg.PKCS11.ModulePath, cfg.PKCS11.TokenLabel, cfg.CADisplay())
@@ -184,7 +199,7 @@ func Generate(cfg *Config) (string, error) {
 		importWrapKeyCmd = CmdImportWrapKey(cfg.CADisplay())
 	}
 
-	isNetworkHSM := isPKCS11 && cfg.PKCS11.NetworkHSM
+	isNetworkHSM := (isPKCS11 && cfg.PKCS11.NetworkHSM) || (isLunaHSM && cfg.PKCS11.NetworkHSM)
 
 	// Build air-gap or network-restricted verification command
 	var airGapCmd []string
@@ -199,7 +214,7 @@ func Generate(cfg *Config) (string, error) {
 		verifySoftwareCmd = append(verifySoftwareCmd, "iptables --version", "dig -v 2>&1 | head -1")
 	}
 	if isExternalKeyGen {
-		verifySoftwareCmd = append(verifySoftwareCmd, "ent --version 2>&1 | head -1 || which ent", "rngtest --version 2>&1 | head -1")
+		verifySoftwareCmd = append(verifySoftwareCmd, "rngtest --version 2>&1 | head -1")
 	}
 
 	d := &templateData{
@@ -234,6 +249,7 @@ func Generate(cfg *Config) (string, error) {
 		IncludeHSM:           includeHSM,
 		IsYubiHSM:            isYubiHSM,
 		IsPKCS11:             isPKCS11,
+		IsLunaHSM:            isLunaHSM,
 		IsNetworkHSM:         isNetworkHSM,
 		HSMDisplayName:       hsmType.DisplayName(),
 		RNGDevice:            rngDevice,
